@@ -102,15 +102,15 @@ onReady(async () => {
   });
 
   const gameLoop = createGameLoop<GameState, InputEvent>({
-    timeStep: 1000 / 60,
+    timeStep: controlPanel.getMinTickInterval(),
     state: {
       viewportSize,
       board: createBoard({
         ...viewportSize,
         border: BORDER,
         gridSize: {
-          columns: 40,
-          rows: 20,
+          columns: controlPanel.getColumns(),
+          rows: controlPanel.getRows(),
         },
       }),
       running: false,

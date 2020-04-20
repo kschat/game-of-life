@@ -41,7 +41,10 @@ export const createControlPanel = ({
   });
 
   return {
-    getTickInterval: () => tickInterval,
+    getMinTickInterval: () => Number($updateIntervalInput.min),
+    getTickInterval: () => Number($updateIntervalInput.value),
+    getColumns: () => Number($widthInput.value),
+    getRows: () => Number($heightInput.value),
     onSliderUpdate: (cb: (value: number) => void) => {
       $updateIntervalInput.addEventListener(
         'input',
