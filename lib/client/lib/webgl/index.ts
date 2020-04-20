@@ -107,18 +107,23 @@ export const createProgramInfo = async ({
   fragmentShaderPath,
   bufferNames,
 }: CreateProgramInfoOptions) => {
-  const program = createProgram({
-    context,
-    vertexShader: await createShader({
+  const [vertexShader, fragmentShader] = await Promise.all([
+    createShader({
       context,
       path: vertexShaderPath,
       type: context.VERTEX_SHADER,
     }),
-    fragmentShader: await createShader({
+    createShader({
       context,
       path: fragmentShaderPath,
       type: context.FRAGMENT_SHADER,
     }),
+  ]);
+
+  const program = createProgram({
+    context,
+    vertexShader,
+    fragmentShader,
   });
 
   const attributes = loadAttributes({ context, program });

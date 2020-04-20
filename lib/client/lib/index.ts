@@ -175,15 +175,3 @@ const createGameLoop = <T>({
     stop: () => cancelAnimationFrame(frameId),
   }
 };
-
-/*
-interface CreateRendererOptions {
-  readonly context: WebGLRenderingContext;
-}
-
-const createRenderer = ({
-  context,
-}: CreateRendererOptions) => {
-
-};
-*/
