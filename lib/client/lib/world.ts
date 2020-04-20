@@ -3,7 +3,7 @@ import { ViewportSize, ProgramInfo } from './webgl/index';
 import { repeat } from './utils/repeat';
 import { COLOR } from './utils/colors';
 
-export interface UpdateWorldOptions { 
+export interface UpdateWorldOptions {
   readonly world: Cell[][];
 }
 
@@ -52,7 +52,7 @@ export const resizeWorld = ({
         height,
         width,
         point: [
-          (border * (columnIndex + 1)) + (columnIndex * width), 
+          (border * (columnIndex + 1)) + (columnIndex * width),
           (border * (rowIndex + 1)) + (rowIndex * height),
         ],
       }
@@ -82,7 +82,7 @@ export const calculateWorld = ({
         height,
         width,
         point: [
-          (border * (columnIndex + 1)) + (columnIndex * width), 
+          (border * (columnIndex + 1)) + (columnIndex * width),
           (border * (rowIndex + 1)) + (rowIndex * height),
         ],
         color: COLOR.WHITE,
@@ -102,7 +102,7 @@ export const drawWorld = ({ world, programInfo }: DrawWorldOptions) => {
   context.useProgram(programInfo.program);
 
   programInfo.uniforms.resolution([
-    context.canvas.width, 
+    context.canvas.width,
     context.canvas.height,
   ]);
 

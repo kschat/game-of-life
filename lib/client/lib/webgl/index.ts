@@ -62,9 +62,9 @@ export interface CreateProgramOptions {
   readonly fragmentShader: WebGLShader;
 }
 
-export const createProgram = ({ 
-  context, 
-  vertexShader, 
+export const createProgram = ({
+  context,
+  vertexShader,
   fragmentShader,
 }: CreateProgramOptions): WebGLProgram => {
   const program = context.createProgram();
@@ -75,14 +75,14 @@ export const createProgram = ({
   context.attachShader(program, vertexShader);
   context.attachShader(program, fragmentShader);
   context.linkProgram(program);
-  
+
   const success = context.getProgramParameter(program, context.LINK_STATUS);
   if (!success) {
     const errorLog = context.getProgramInfoLog(program);
     context.deleteProgram(program);
     throw new WebGLError(`Failed to create program: ${errorLog || 'Unknown error'}`);
   }
-  
+
   return program;
 };
 
@@ -136,7 +136,7 @@ export const createProgramInfo = async ({
 
   return {
     context,
-    program, 
+    program,
     attributes,
     uniforms,
     buffers,
@@ -231,9 +231,9 @@ interface CreateUniformSetterOptions {
 // Float32List | number | Int32List
 type UniformSetter = (value: any) => void;
 
-const createUniformSetter = ({ 
-  program, 
-  info, 
+const createUniformSetter = ({
+  program,
+  info,
   context,
 }: CreateUniformSetterOptions) => {
   const { name, type, size } = info;
@@ -247,10 +247,10 @@ const createUniformSetter = ({
 
   switch (type) {
     case context.FLOAT:
-      return isArray 
+      return isArray
         ? context.uniform1fv.bind(context, location)
         : context.uniform1f.bind(context, location);
-    
+
     case context.FLOAT_VEC2:
       return context.uniform2fv.bind(context, location);
 
@@ -261,7 +261,7 @@ const createUniformSetter = ({
       return context.uniform4fv.bind(context, location);
 
     case context.INT:
-      return isArray 
+      return isArray
         ? context.uniform1iv.bind(context, location)
         : context.uniform1i.bind(context, location);
 
@@ -290,7 +290,7 @@ const createUniformSetter = ({
       return context.uniformMatrix4fv.bind(context, location, false);
 
     default:
-      throw new WebGLError(`unknown type "${type}"`); 
+      throw new WebGLError(`unknown type "${type}"`);
   }
 };
 

@@ -10,7 +10,7 @@ export interface Cell {
   readonly color: readonly [number, number, number, number];
   readonly state: CellState;
 }
- 
+
 export interface DrawCellOptions {
   readonly programInfo: ProgramInfo;
   readonly cell: Cell;
@@ -122,6 +122,6 @@ export const toggleCell = ({ cell }: ToggleCellOptions): Cell => {
   };
 };
 
-export const mapStateToColor = (state: CellState) => state === 'ALIVE' 
-  ? COLOR.BLACK 
+export const mapStateToColor = (state: CellState) => state === 'ALIVE'
+  ? COLOR.BLACK
   : COLOR.WHITE;

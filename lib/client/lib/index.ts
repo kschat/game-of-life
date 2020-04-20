@@ -3,11 +3,11 @@ import { onReady, $ } from './utils/dom';
 import { detectCollision, toggleCell } from './cell';
 import { updateWorld, resizeWorld, calculateWorld, drawWorld } from './world';
 
-import { 
-  loadContext, 
-  getViewportSize, 
+import {
+  loadContext,
+  getViewportSize,
   resizeViewport,
-  createProgramInfo, 
+  createProgramInfo,
 } from './webgl/index';
 
 const BORDER = 4;
@@ -28,7 +28,7 @@ onReady(async () => {
 
   const world = calculateWorld({
     viewportSize: getViewportSize({
-      canvas: context.canvas as HTMLCanvasElement, 
+      canvas: context.canvas as HTMLCanvasElement,
       devicePixelRatio: DEVICE_PIXEL_RATIO,
     }),
     columns: 40,
@@ -88,11 +88,11 @@ onReady(async () => {
 
   const gameLoop = createGameLoop({
     state: gameState,
-    interval: 60 / 1000,
-    update: ({ state, now, last }) => {
-      state.tick.delta += Math.min(state.tick.interval, now - last);
+    timeStep: 1000 / 60,
+    update: ({ state, delta }) => {
+      state.tick.delta += Math.min(state.tick.interval, delta);
 
-      if (state.tick.delta >= state.tick.interval) {
+      while (state.tick.delta >= state.tick.interval) {
         state.tick.delta -= state.tick.interval;
         if (state.running) {
           state.world = updateWorld({ world: state.world });
@@ -101,9 +101,9 @@ onReady(async () => {
 
       return state;
     },
-    draw: ({ state }) => {
-      const viewportSize = resizeViewport({ 
-        canvas: context.canvas as HTMLCanvasElement, 
+    render: ({ state }) => {
+      const viewportSize = resizeViewport({
+        canvas: context.canvas as HTMLCanvasElement,
         devicePixelRatio: DEVICE_PIXEL_RATIO,
       });
 
@@ -131,8 +131,6 @@ onReady(async () => {
 
 interface UpdateOptions<T> {
   readonly delta: number;
-  readonly now: number;
-  readonly last: number;
   readonly state: T;
 }
 
@@ -143,38 +141,36 @@ interface DrawOptions<T> {
 
 interface CreateGameLoopOptions<T> {
   readonly state: T;
-  readonly interval: number;
-  readonly draw: (options: DrawOptions<T>) => T;
+  readonly timeStep: number;
+  readonly render: (options: DrawOptions<T>) => T;
   readonly update: (options: UpdateOptions<T>) => T;
 }
 
 const createGameLoop = <T>({
   state,
-  interval,
-  draw,
+  timeStep,
+  render,
   update,
 }: CreateGameLoopOptions<T>) => {
   let frameId = -1;
   let delta = 0;
-  let last = performance.now();
 
-  const loop = (now: number) => {
-    delta = delta + Math.min(interval, now - last);
+  const loop = (last: number) => (now: number) => {
+    delta = delta + Math.min(timeStep, now - last);
 
-    while (delta >= interval) {
-      delta = delta - interval;
-      state = update({ delta, now, last, state });
+    while (delta >= timeStep) {
+      delta = delta - timeStep;
+      state = update({ delta: timeStep, state });
     }
 
-    state = draw({ now, state });
+    state = render({ now, state });
 
-    last = now;
-    frameId = requestAnimationFrame(loop);
+    frameId = requestAnimationFrame(loop(now));
   };
 
   return {
     start: () => {
-      frameId = requestAnimationFrame(loop);
+      frameId = requestAnimationFrame(loop(0));
     },
     stop: () => cancelAnimationFrame(frameId),
   }
@@ -185,7 +181,7 @@ interface CreateRendererOptions {
   readonly context: WebGLRenderingContext;
 }
 
-const createRenderer = ({ 
+const createRenderer = ({
   context,
 }: CreateRendererOptions) => {
 
