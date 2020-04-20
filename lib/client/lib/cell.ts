@@ -3,8 +3,10 @@ import { COLOR } from './utils/colors';
 
 export type CellState = 'ALIVE' | 'DEAD';
 
+export type Point = readonly [number, number];
+
 export interface Cell {
-  readonly point: [number, number];
+  readonly point: Point;
   readonly height: number;
   readonly width: number;
   readonly color: readonly [number, number, number, number];

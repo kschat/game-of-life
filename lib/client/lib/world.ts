@@ -1,135 +1,198 @@
-import { Cell, calculateCellState, drawCell, detectCellCollision } from './cell';
-import { ViewportSize, ProgramInfo } from './webgl/index';
+import { Cell, calculateCellState, drawCell, detectCellCollision, Point } from './cell';
+import { ProgramInfo } from './webgl/index';
 import { repeat } from './utils/repeat';
 import { COLOR } from './utils/colors';
+
+export type Cells = Cell[][];
 
 export interface GridSize {
   rows: number;
   columns: number;
 }
 
-export type World = Cell[][];
+export interface World {
+  height: number;
+  width: number;
+  border: number;
+  cells: Cells;
+};
 
 export interface UpdateWorldOptions {
   readonly world: World;
 }
 
 export const updateWorld = ({ world }: UpdateWorldOptions): World => {
-  return world.map((rowCell, row) => {
-    return rowCell.map((cell, column) => {
-      const aliveNeighborCount = [
-        world[row - 1]?.[column - 1]?.state === 'ALIVE',
-        world[row - 1]?.[column]?.state === 'ALIVE',
-        world[row - 1]?.[column + 1]?.state === 'ALIVE',
-        world[row]?.[column + 1]?.state === 'ALIVE',
-        world[row + 1]?.[column + 1]?.state === 'ALIVE',
-        world[row + 1]?.[column]?.state === 'ALIVE',
-        world[row + 1]?.[column - 1]?.state === 'ALIVE',
-        world[row]?.[column - 1]?.state === 'ALIVE'
-      ].filter((i) => i).length;
+  const { cells } = world;
 
-      return {
-        ...cell,
-        state: calculateCellState({ cell, aliveNeighborCount })
-      };
-    });
-  });
+  return {
+    ...world,
+    cells: cells.map((rowCell, row) => {
+      return rowCell.map((cell, column) => {
+        const aliveNeighborCount = [
+          cells[row - 1]?.[column - 1]?.state === 'ALIVE',
+          cells[row - 1]?.[column]?.state === 'ALIVE',
+          cells[row - 1]?.[column + 1]?.state === 'ALIVE',
+          cells[row]?.[column + 1]?.state === 'ALIVE',
+          cells[row + 1]?.[column + 1]?.state === 'ALIVE',
+          cells[row + 1]?.[column]?.state === 'ALIVE',
+          cells[row + 1]?.[column - 1]?.state === 'ALIVE',
+          cells[row]?.[column - 1]?.state === 'ALIVE'
+        ]
+        .filter((i) => i)
+        .length;
+
+        return {
+          ...cell,
+          state: calculateCellState({ cell, aliveNeighborCount })
+        };
+      });
+    }),
+  };
 };
 
 export interface ResizeWorldOptions {
-  readonly viewportSize: ViewportSize;
+  readonly height: number;
+  readonly width: number;
   readonly border: number;
-  readonly world: World;
+  readonly cells: Cells;
 }
 
 export const resizeWorld = ({
-  viewportSize,
-  world,
+  height,
+  width,
   border,
+  cells,
 }: ResizeWorldOptions): World => {
-  const rows = world.length;
-  const columns = world[0].length;
-  const height = ((viewportSize.height - border) / rows) - border;
-  const width = ((viewportSize.width - border) / columns) - border;
+  const { cellHeight, cellWidth } = calculateCellDimensions({
+    height,
+    width,
+    border,
+    rows: cells.length,
+    columns: cells[0].length,
+  });
 
-  return world.map((row, rowIndex) => {
+  const updatedCells = cells.map((row, rowIndex) => {
     return row.map((cell, columnIndex) => ({
       ...cell,
-      height,
-      width,
-      point: [
-        (border * (columnIndex + 1)) + (columnIndex * width),
-        (border * (rowIndex + 1)) + (rowIndex * height),
-      ],
+      height: cellHeight,
+      width: cellWidth,
+      point: caluclateCellPosition({
+        border,
+        column: columnIndex,
+        row: rowIndex,
+        height: cellHeight,
+        width: cellWidth
+      }),
     }));
   });
+
+  return {
+    height,
+    width,
+    border,
+    cells: updatedCells,
+  };
 };
 
 export interface CreateWorldOptions {
-  readonly viewportSize: ViewportSize;
+  readonly height: number;
+  readonly width: number;
   readonly gridSize: GridSize;
   readonly border: number;
 }
 
 export const createWorld = ({
-  viewportSize,
+  height,
+  width,
   border,
   gridSize: {
     columns,
     rows,
   },
 }: CreateWorldOptions): World => {
-  const height = ((viewportSize.height - border) / rows) - border;
-  const width = ((viewportSize.width - border) / columns) - border;
+  const { cellHeight, cellWidth } = calculateCellDimensions({
+    height,
+    width,
+    border,
+    rows,
+    columns,
+  });
 
-  return repeat(rows, (rowIndex) => {
+  const cells = repeat(rows, (rowIndex) => {
     return repeat<Cell>(columns, (columnIndex) => ({
-      height,
-      width,
-      point: [
-        (border * (columnIndex + 1)) + (columnIndex * width),
-        (border * (rowIndex + 1)) + (rowIndex * height),
-      ],
+      height: cellHeight,
+      width: cellWidth,
+      point: caluclateCellPosition({
+        border,
+        column: columnIndex,
+        row: rowIndex,
+        height: cellHeight,
+        width: cellWidth
+      }),
       color: COLOR.WHITE,
       state: 'DEAD',
     }));
   });
+
+  return {
+    height,
+    width,
+    border,
+    cells,
+  };
 };
 
 export interface UpdateWorldSizeOptions {
-  readonly viewportSize: ViewportSize;
-  readonly world: World;
+  readonly height: number;
+  readonly width: number;
+  readonly cells: Cells;
   readonly gridSize: GridSize;
   readonly border: number;
 }
 
 export const updateWorldSize = ({
-  world,
-  viewportSize,
+  cells,
+  height,
+  width,
   border,
   gridSize: {
     rows,
     columns,
   },
 }: UpdateWorldSizeOptions): World => {
-  const height = ((viewportSize.height - border) / rows) - border;
-  const width = ((viewportSize.width - border) / columns) - border;
+  const { cellHeight, cellWidth } = calculateCellDimensions({
+    height,
+    width,
+    border,
+    rows,
+    columns,
+  });
 
-  return repeat(rows, (rowIndex) => {
+  const updatedCells = repeat(rows, (rowIndex) => {
     return repeat(columns, (columnIndex) => {
-      const existing: Cell | undefined = world[rowIndex]?.[columnIndex];
+      const existing: Cell | undefined = cells[rowIndex]?.[columnIndex];
       return {
         color: existing?.color ?? COLOR.WHITE,
         state: existing?.state ?? 'DEAD',
-        height,
-        width,
-        point: [
-          (border * (columnIndex + 1)) + (columnIndex * width),
-          (border * (rowIndex + 1)) + (rowIndex * height),
-        ],
+        height: cellHeight,
+        width: cellWidth,
+        point: caluclateCellPosition({
+          border,
+          column: columnIndex,
+          row: rowIndex,
+          height: cellHeight,
+          width: cellWidth
+        }),
       };
     });
   });
+
+  return {
+    height,
+    width,
+    border,
+    cells: updatedCells,
+  };
 };
 
 export interface DrawWorldOptions {
@@ -146,7 +209,7 @@ export const drawWorld = ({ world, programInfo }: DrawWorldOptions): void => {
     context.canvas.height,
   ]);
 
-  world.forEach((row) => {
+  world.cells.forEach((row) => {
     row.forEach((cell) => {
       drawCell({
         programInfo,
@@ -175,7 +238,7 @@ export type CollisionResult =
   };
 
 export const detectWorldCollision = ({ world, point }: DetectWorldCollisionOptions): CollisionResult => {
-  const result = world.reduce<CollisionResult | null>((acc, row, rowIndex) => {
+  const result = world.cells.reduce<CollisionResult | null>((acc, row, rowIndex) => {
     if (acc) {
       return acc;
     }
@@ -185,7 +248,7 @@ export const detectWorldCollision = ({ world, point }: DetectWorldCollisionOptio
       return null;
     }
 
-    const cell = world[rowIndex][foundIndex];
+    const cell = world.cells[rowIndex][foundIndex];
     return {
       collision: true,
       cell,
@@ -198,3 +261,41 @@ export const detectWorldCollision = ({ world, point }: DetectWorldCollisionOptio
 
   return result ?? { collision: false };
 };
+
+interface CalculateCellDimensionsOptions {
+  readonly height: number;
+  readonly width: number;
+  readonly border: number;
+  readonly rows: number;
+  readonly columns: number;
+}
+
+const calculateCellDimensions = ({
+  height,
+  width,
+  border,
+  rows,
+  columns,
+}: CalculateCellDimensionsOptions) => ({
+  cellHeight: ((height - border) / rows) - border,
+  cellWidth: ((width - border) / columns) - border,
+});
+
+interface CalculateCellPositionOptions {
+  readonly border: number;
+  readonly column: number;
+  readonly row: number;
+  readonly height: number;
+  readonly width: number;
+}
+
+const caluclateCellPosition = ({
+  border,
+  column,
+  row,
+  height,
+  width,
+}: CalculateCellPositionOptions): Point => [
+  (border * (column + 1)) + (column * width),
+  (border * (row + 1)) + (row * height),
+];

@@ -1,6 +1,6 @@
 import { COLOR } from './utils/colors';
 import { onReady } from './utils/dom';
-import { toggleCell } from './cell';
+import { toggleCell, Point } from './cell';
 import { createControlPanel } from './control-panel';
 import { createGameLoop } from './game-loop';
 import { UnreachableCaseError } from './errors';
@@ -37,7 +37,7 @@ type InputEvent =
   }
   | {
     readonly type: 'BOARD_CLICK';
-    readonly point: readonly [number, number];
+    readonly point: Point;
   }
   | {
     readonly type: 'SIZE_UPDATE';
@@ -106,7 +106,7 @@ onReady(async () => {
     state: {
       viewportSize,
       world: createWorld({
-        viewportSize,
+        ...viewportSize,
         border: BORDER,
         gridSize: {
           columns: 40,
@@ -138,14 +138,13 @@ onReady(async () => {
             }
 
             const { position, cell } = result;
-            acc.world[position.row][position.column] = toggleCell({ cell });
+            acc.world.cells[position.row][position.column] = toggleCell({ cell });
             return acc;
 
           case 'SIZE_UPDATE':
             acc.world = updateWorldSize({
-              world: acc.world,
-              viewportSize: acc.viewportSize,
-              border: BORDER,
+              ...acc.world,
+              ...acc.viewportSize,
               gridSize: event.size,
             });
             return acc;
@@ -178,9 +177,8 @@ onReady(async () => {
       if (viewportSize.resize) {
         state.viewportSize = viewportSize;
         state.world = resizeWorld({
-          viewportSize,
-          world: state.world,
-          border: BORDER
+          ...state.world,
+          ...viewportSize,
         });
       }
 

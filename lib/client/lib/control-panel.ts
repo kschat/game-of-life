@@ -1,6 +1,7 @@
 import { $ } from './utils/dom';
 import { debounce } from './utils/debounce';
 import { GridSize } from './world';
+import { Point } from './cell';
 
 export interface CreateControlPanelOptions {
   readonly selectors: {
@@ -50,7 +51,7 @@ export const createControlPanel = ({
     onRunClick: (cb: () => void) => {
       $runButton.addEventListener('click', () => cb());
     },
-    onCanvasClick: (cb: (point: readonly [number, number]) => void) => {
+    onCanvasClick: (cb: (point: Point) => void) => {
       $canvas.addEventListener('click', (event) => {
         const topOffset = $canvas.offsetTop;
         const leftOffset = $canvas.offsetLeft;
