@@ -1,6 +1,8 @@
 import { COLOR } from './utils/colors';
 import { onReady } from './utils/dom';
 import { toggleCell, Cell } from './cell';
+import { createControlPanel } from './control-panel';
+import { createGameLoop } from './game-loop';
 
 import {
   updateWorld,
@@ -16,7 +18,6 @@ import {
   resizeViewport,
   createProgramInfo,
 } from './webgl/index';
-import { createControlPanel } from './control-panel';
 
 const BORDER = 4;
 const DEVICE_PIXEL_RATIO = window.devicePixelRatio;
@@ -163,62 +164,3 @@ onReady(async () => {
 
   gameLoop.start();
 });
-
-interface UpdateOptions<T> {
-  readonly delta: number;
-  readonly state: T;
-}
-
-interface RenderOptions<T> {
-  readonly now: number;
-  readonly state: T;
-}
-
-interface ProcessInputOptions<T, E> {
-  readonly state: T;
-  readonly events: E[];
-}
-
-interface CreateGameLoopOptions<T, E> {
-  readonly state: T;
-  readonly timeStep: number;
-  readonly render: (options: RenderOptions<T>) => T;
-  readonly update: (options: UpdateOptions<T>) => T;
-  readonly processInput: (options: ProcessInputOptions<T, E>) => T;
-}
-
-const createGameLoop = <T, E>({
-  state,
-  timeStep,
-  render,
-  update,
-  processInput,
-}: CreateGameLoopOptions<T, E>) => {
-  let frameId = -1;
-  let delta = 0;
-  let eventBuffer: E[] = [];
-
-  const loop = (last: number) => (now: number) => {
-    delta = delta + Math.min(timeStep, now - last);
-
-    state = processInput({ state, events: eventBuffer });
-    eventBuffer.length = 0;
-
-    while (delta >= timeStep) {
-      delta = delta - timeStep;
-      state = update({ delta: timeStep, state });
-    }
-
-    state = render({ now, state });
-
-    frameId = requestAnimationFrame(loop(now));
-  };
-
-  return {
-    start: () => {
-      frameId = requestAnimationFrame(loop(0));
-    },
-    stop: () => cancelAnimationFrame(frameId),
-    registerInput: (event: E) => eventBuffer.push(event),
-  }
-};
