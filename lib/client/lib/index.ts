@@ -1,6 +1,6 @@
 import { COLOR } from './utils/colors';
 import { onReady, $ } from './utils/dom';
-import { toggleCell } from './cell';
+import { toggleCell, Cell } from './cell';
 
 import {
   updateWorld,
@@ -33,6 +33,15 @@ type InputEvent =
     readonly point: readonly [number, number];
   };
 
+interface GameState {
+  world: Cell[][];
+  running: boolean;
+  tick: {
+    interval: number;
+    delta: number;
+  };
+}
+
 onReady(async () => {
   const $runButton = $('#run-button')[0];
   const $updateIntervalInput = $<HTMLInputElement>('#update-interval-input')[0];
@@ -60,7 +69,7 @@ onReady(async () => {
     // @ts-ignore
     const value = Number(target.value);
     $updateIntervalLabel.textContent = `${value} ms`;
-    gameLoop.registerEvent({
+    gameLoop.registerInput({
       type: 'INTERVAL_SLIDER_UPDATE',
       value,
     });
@@ -68,7 +77,7 @@ onReady(async () => {
 
   $runButton.addEventListener('click', () => {
     $runButton.textContent = $runButton.textContent === 'start' ? 'pause' : 'start';
-    gameLoop.registerEvent({
+    gameLoop.registerInput({
       type: 'RUN_BUTTON_CLICK',
     });
   });
@@ -81,7 +90,7 @@ onReady(async () => {
       ((event.pageY || event.clientY) - topOffset) * DEVICE_PIXEL_RATIO,
     ] as const;
 
-    gameLoop.registerEvent({
+    gameLoop.registerInput({
       type: 'BOARD_CLICK',
       point,
     });
@@ -90,7 +99,8 @@ onReady(async () => {
   const tickInterval = Number($updateIntervalInput.value);
   $updateIntervalLabel.textContent = `${tickInterval} ms`;
 
-  const gameLoop = createGameLoop({
+  const gameLoop = createGameLoop<GameState, InputEvent>({
+    timeStep: 1000 / 60,
     state: {
       world,
       running: false,
@@ -99,8 +109,7 @@ onReady(async () => {
         delta: 0,
       },
     },
-    eventBuffer: ([] as InputEvent[]),
-    timeStep: 1000 / 60,
+
     processInput: ({ state, events }) => {
       return events.reduce((acc, event) => {
         switch (event.type) {
@@ -128,6 +137,7 @@ onReady(async () => {
         }
       }, state);
     },
+
     update: ({ state, delta }) => {
       state.tick.delta += Math.min(state.tick.interval, delta);
 
@@ -140,6 +150,7 @@ onReady(async () => {
 
       return state;
     },
+
     render: ({ state }) => {
       const viewportSize = resizeViewport({
         canvas: context.canvas as HTMLCanvasElement,
@@ -177,23 +188,21 @@ interface RenderOptions<T> {
   readonly state: T;
 }
 
-interface ProcessInputOptions<T, E extends any[]> {
+interface ProcessInputOptions<T, E> {
   readonly state: T;
-  readonly events: E;
+  readonly events: E[];
 }
 
-interface CreateGameLoopOptions<T, E extends any[]> {
+interface CreateGameLoopOptions<T, E> {
   readonly state: T;
-  readonly eventBuffer: E;
   readonly timeStep: number;
   readonly render: (options: RenderOptions<T>) => T;
   readonly update: (options: UpdateOptions<T>) => T;
   readonly processInput: (options: ProcessInputOptions<T, E>) => T;
 }
 
-const createGameLoop = <T, E extends any[]>({
+const createGameLoop = <T, E>({
   state,
-  eventBuffer,
   timeStep,
   render,
   update,
@@ -201,6 +210,7 @@ const createGameLoop = <T, E extends any[]>({
 }: CreateGameLoopOptions<T, E>) => {
   let frameId = -1;
   let delta = 0;
+  let eventBuffer: E[] = [];
 
   const loop = (last: number) => (now: number) => {
     delta = delta + Math.min(timeStep, now - last);
@@ -223,8 +233,6 @@ const createGameLoop = <T, E extends any[]>({
       frameId = requestAnimationFrame(loop(0));
     },
     stop: () => cancelAnimationFrame(frameId),
-    registerEvent: (event: UnwrapArray<E>) => eventBuffer.push(event),
+    registerInput: (event: E) => eventBuffer.push(event),
   }
 };
-
-type UnwrapArray<T> = T extends Array<infer U> ? U : T;
