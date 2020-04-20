@@ -9,9 +9,9 @@ export interface DebounceOptions<P extends any[]> {
   readonly immediate?: boolean;
 }
 
-export const debounce = <P extends any[]>({ 
-  action, 
-  wait, 
+export const debounce = <P extends any[]>({
+  action,
+  wait,
   immediate = false,
 }: DebounceOptions<P>): typeof action => {
   let timeoutId: number | undefined;
@@ -32,4 +32,3 @@ export const debounce = <P extends any[]>({
     }
   };
 };
-
