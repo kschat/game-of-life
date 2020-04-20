@@ -6,15 +6,15 @@ import { createGameLoop } from './game-loop';
 import { UnreachableCaseError } from './errors';
 
 import {
-  updateWorld,
-  resizeWorld,
-  createWorld,
-  drawWorld,
-  detectWorldCollision,
-  World,
-  updateWorldSize,
+  updateBoard,
+  resizeBoard,
+  createBoard,
+  drawBoard,
+  detectBoardCollision,
+  Board,
+  updateBoardSize,
   GridSize,
-} from './world';
+} from './board';
 
 import {
   loadContext,
@@ -45,7 +45,7 @@ type InputEvent =
   };
 
 interface GameState {
-  world: World;
+  board: Board;
   viewportSize: ViewportSize;
   running: boolean;
   tick: {
@@ -105,7 +105,7 @@ onReady(async () => {
     timeStep: 1000 / 60,
     state: {
       viewportSize,
-      world: createWorld({
+      board: createBoard({
         ...viewportSize,
         border: BORDER,
         gridSize: {
@@ -132,18 +132,18 @@ onReady(async () => {
             return acc;
 
           case 'BOARD_CLICK':
-            const result = detectWorldCollision({ world: acc.world, point: event.point });
+            const result = detectBoardCollision({ board: acc.board, point: event.point });
             if (!result.collision) {
               return acc;
             }
 
             const { position, cell } = result;
-            acc.world.cells[position.row][position.column] = toggleCell({ cell });
+            acc.board.cells[position.row][position.column] = toggleCell({ cell });
             return acc;
 
           case 'SIZE_UPDATE':
-            acc.world = updateWorldSize({
-              ...acc.world,
+            acc.board = updateBoardSize({
+              ...acc.board,
               ...acc.viewportSize,
               gridSize: event.size,
             });
@@ -161,7 +161,7 @@ onReady(async () => {
       while (state.tick.delta >= state.tick.interval) {
         state.tick.delta -= state.tick.interval;
         if (state.running) {
-          state.world = updateWorld({ world: state.world });
+          state.board = updateBoard({ board: state.board });
         }
       }
 
@@ -176,8 +176,8 @@ onReady(async () => {
 
       if (viewportSize.resize) {
         state.viewportSize = viewportSize;
-        state.world = resizeWorld({
-          ...state.world,
+        state.board = resizeBoard({
+          ...state.board,
           ...viewportSize,
         });
       }
@@ -186,7 +186,7 @@ onReady(async () => {
       context.clearColor(...COLOR.BACKGROUND_COLOR);
       context.clear(context.COLOR_BUFFER_BIT);
 
-      drawWorld({ world: state.world, programInfo });
+      drawBoard({ board: state.board, programInfo });
 
       return state;
     },

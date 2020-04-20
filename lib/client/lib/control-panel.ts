@@ -1,6 +1,6 @@
 import { $ } from './utils/dom';
 import { debounce } from './utils/debounce';
-import { GridSize } from './world';
+import { GridSize } from './board';
 import { Point } from './cell';
 
 export interface CreateControlPanelOptions {

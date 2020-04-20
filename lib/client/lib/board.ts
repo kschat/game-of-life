@@ -10,22 +10,22 @@ export interface GridSize {
   columns: number;
 }
 
-export interface World {
+export interface Board {
   height: number;
   width: number;
   border: number;
   cells: Cells;
 };
 
-export interface UpdateWorldOptions {
-  readonly world: World;
+export interface UpdateBoardOptions {
+  readonly board: Board;
 }
 
-export const updateWorld = ({ world }: UpdateWorldOptions): World => {
-  const { cells } = world;
+export const updateBoard = ({ board }: UpdateBoardOptions): Board => {
+  const { cells } = board;
 
   return {
-    ...world,
+    ...board,
     cells: cells.map((rowCell, row) => {
       return rowCell.map((cell, column) => {
         const aliveNeighborCount = [
@@ -50,19 +50,19 @@ export const updateWorld = ({ world }: UpdateWorldOptions): World => {
   };
 };
 
-export interface ResizeWorldOptions {
+export interface ResizeBoardOptions {
   readonly height: number;
   readonly width: number;
   readonly border: number;
   readonly cells: Cells;
 }
 
-export const resizeWorld = ({
+export const resizeBoard = ({
   height,
   width,
   border,
   cells,
-}: ResizeWorldOptions): World => {
+}: ResizeBoardOptions): Board => {
   const { cellHeight, cellWidth } = calculateCellDimensions({
     height,
     width,
@@ -94,14 +94,14 @@ export const resizeWorld = ({
   };
 };
 
-export interface CreateWorldOptions {
+export interface CreateBoardOptions {
   readonly height: number;
   readonly width: number;
   readonly gridSize: GridSize;
   readonly border: number;
 }
 
-export const createWorld = ({
+export const createBoard = ({
   height,
   width,
   border,
@@ -109,7 +109,7 @@ export const createWorld = ({
     columns,
     rows,
   },
-}: CreateWorldOptions): World => {
+}: CreateBoardOptions): Board => {
   const { cellHeight, cellWidth } = calculateCellDimensions({
     height,
     width,
@@ -142,7 +142,7 @@ export const createWorld = ({
   };
 };
 
-export interface UpdateWorldSizeOptions {
+export interface UpdateBoardSizeOptions {
   readonly height: number;
   readonly width: number;
   readonly cells: Cells;
@@ -150,7 +150,7 @@ export interface UpdateWorldSizeOptions {
   readonly border: number;
 }
 
-export const updateWorldSize = ({
+export const updateBoardSize = ({
   cells,
   height,
   width,
@@ -159,7 +159,7 @@ export const updateWorldSize = ({
     rows,
     columns,
   },
-}: UpdateWorldSizeOptions): World => {
+}: UpdateBoardSizeOptions): Board => {
   const { cellHeight, cellWidth } = calculateCellDimensions({
     height,
     width,
@@ -195,12 +195,12 @@ export const updateWorldSize = ({
   };
 };
 
-export interface DrawWorldOptions {
-  readonly world: World;
+export interface DrawBoardOptions {
+  readonly board: Board;
   readonly programInfo: ProgramInfo;
 }
 
-export const drawWorld = ({ world, programInfo }: DrawWorldOptions): void => {
+export const drawBoard = ({ board, programInfo }: DrawBoardOptions): void => {
   const { context } = programInfo;
   context.useProgram(programInfo.program);
 
@@ -209,7 +209,7 @@ export const drawWorld = ({ world, programInfo }: DrawWorldOptions): void => {
     context.canvas.height,
   ]);
 
-  world.cells.forEach((row) => {
+  board.cells.forEach((row) => {
     row.forEach((cell) => {
       drawCell({
         programInfo,
@@ -219,9 +219,9 @@ export const drawWorld = ({ world, programInfo }: DrawWorldOptions): void => {
   });
 };
 
-export interface DetectWorldCollisionOptions {
-  readonly world: World;
-  readonly point: readonly [number, number];
+export interface DetectBoardCollisionOptions {
+  readonly board: Board;
+  readonly point: Point;
 }
 
 export type CollisionResult =
@@ -237,8 +237,8 @@ export type CollisionResult =
     };
   };
 
-export const detectWorldCollision = ({ world, point }: DetectWorldCollisionOptions): CollisionResult => {
-  const result = world.cells.reduce<CollisionResult | null>((acc, row, rowIndex) => {
+export const detectBoardCollision = ({ board, point }: DetectBoardCollisionOptions): CollisionResult => {
+  const result = board.cells.reduce<CollisionResult | null>((acc, row, rowIndex) => {
     if (acc) {
       return acc;
     }
@@ -248,7 +248,7 @@ export const detectWorldCollision = ({ world, point }: DetectWorldCollisionOptio
       return null;
     }
 
-    const cell = world.cells[rowIndex][foundIndex];
+    const cell = board.cells[rowIndex][foundIndex];
     return {
       collision: true,
       cell,
