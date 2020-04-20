@@ -1,5 +1,9 @@
 {
   "name": "game-of-life",
+  "main": "dist/server/index.js",
+  "engines": {
+    "node": "12.x"
+  },
   "scripts": {
     "build": "run-s build:ts copy-static",
     "build:ts": "run-s build:ts:*",
@@ -8,7 +12,9 @@
     "watch:ts": "run-p 'build:ts:* -- --watch'",
     "watch:static": "chokidar 'lib/client/**/*.{html,css,glsl}' -c 'yarn run copy-static'",
     "watch": "run-p watch:*",
-    "copy-static": "copyfiles -u 1 'lib/client/**/*.{html,css,glsl}' dist"
+    "copy-static": "copyfiles -u 1 'lib/client/**/*.{html,css,glsl}' dist",
+    "postinstall": "yarn run build",
+    "start": "node dist/server/index.js"
   },
   "dependencies": {
     "@hapi/hapi": "18.3.2",

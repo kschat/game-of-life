@@ -4,9 +4,11 @@ import { join as pJoin } from 'path';
 import { Server } from '@hapi/hapi';
 import * as inert from '@hapi/inert';
 
+const port = Number(process.env.PORT) || 8080;
+
 (async () => {
   const server = new Server({
-    port: 8080,
+    port,
     router: {
       stripTrailingSlash: true,
     },
