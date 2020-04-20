@@ -1,4 +1,4 @@
-import { Cell, calculateCellState, drawCell } from './cell';
+import { Cell, calculateCellState, drawCell, detectCellCollision } from './cell';
 import { ViewportSize, ProgramInfo } from './webgl/index';
 import { repeat } from './utils/repeat';
 import { COLOR } from './utils/colors';
@@ -97,7 +97,7 @@ export interface DrawWorldOptions {
   readonly programInfo: ProgramInfo;
 }
 
-export const drawWorld = ({ world, programInfo }: DrawWorldOptions) => {
+export const drawWorld = ({ world, programInfo }: DrawWorldOptions): void => {
   const { context } = programInfo;
   context.useProgram(programInfo.program);
 
@@ -114,4 +114,47 @@ export const drawWorld = ({ world, programInfo }: DrawWorldOptions) => {
       });
     });
   });
+};
+
+export interface DetectWorldCollisionOptions {
+  readonly world: Cell[][];
+  readonly point: readonly [number, number];
+}
+
+export type CollisionResult =
+  | {
+    readonly collision: false;
+  }
+  | {
+    readonly collision: true;
+    readonly cell: Cell;
+    readonly position: {
+      readonly row: number;
+      readonly column: number;
+    };
+  };
+
+export const detectWorldCollision = ({ world, point }: DetectWorldCollisionOptions): CollisionResult => {
+  const result = world.reduce<CollisionResult | null>((acc, row, rowIndex) => {
+    if (acc) {
+      return acc;
+    }
+
+    const foundIndex = row.findIndex((cell) => detectCellCollision({ cell, point }));
+    if (foundIndex === -1) {
+      return null;
+    }
+
+    const cell = world[rowIndex][foundIndex];
+    return {
+      collision: true,
+      cell,
+      position: {
+        row: rowIndex,
+        column: foundIndex,
+      },
+    };
+  }, null);
+
+  return result ?? { collision: false };
 };

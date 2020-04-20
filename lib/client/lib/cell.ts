@@ -97,7 +97,7 @@ interface DetectCollisionOptions {
   readonly point: readonly [number, number];
 }
 
-export const detectCollision = ({ cell, point }: DetectCollisionOptions): boolean => {
+export const detectCellCollision = ({ cell, point }: DetectCollisionOptions): boolean => {
   const [cellX, cellY] = cell.point;
   const [x, y] = point;
 

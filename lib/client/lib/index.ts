@@ -1,7 +1,14 @@
 import { COLOR } from './utils/colors';
 import { onReady, $ } from './utils/dom';
-import { detectCollision, toggleCell } from './cell';
-import { updateWorld, resizeWorld, calculateWorld, drawWorld } from './world';
+import { toggleCell } from './cell';
+
+import {
+  updateWorld,
+  resizeWorld,
+  calculateWorld,
+  drawWorld,
+  detectWorldCollision,
+} from './world';
 
 import {
   loadContext,
@@ -13,8 +20,21 @@ import {
 const BORDER = 4;
 const DEVICE_PIXEL_RATIO = window.devicePixelRatio;
 
+type InputEvent =
+  | {
+    readonly type: 'INTERVAL_SLIDER_UPDATE';
+    readonly value: number;
+  }
+  | {
+    readonly type: 'RUN_BUTTON_CLICK';
+  }
+  | {
+    readonly type: 'BOARD_CLICK';
+    readonly point: readonly [number, number];
+  };
+
 onReady(async () => {
-  const $startButton = $('#start-button')[0];
+  const $runButton = $('#run-button')[0];
   const $updateIntervalInput = $<HTMLInputElement>('#update-interval-input')[0];
   const $updateIntervalLabel = $('#update-interval-label')[0];
   const context = loadContext('#game-viewport');
@@ -38,13 +58,19 @@ onReady(async () => {
 
   $updateIntervalInput.addEventListener('input', ({ target }) => {
     // @ts-ignore
-    gameState.tick.interval = Number(target.value);
-    $updateIntervalLabel.textContent = `${gameState.tick.interval} ms`;
+    const value = Number(target.value);
+    $updateIntervalLabel.textContent = `${value} ms`;
+    gameLoop.registerEvent({
+      type: 'INTERVAL_SLIDER_UPDATE',
+      value,
+    });
   });
 
-  $startButton.addEventListener('click', () => {
-    gameState.running = !gameState.running;
-    $startButton.textContent = gameState.running ? 'pause' : 'start';
+  $runButton.addEventListener('click', () => {
+    $runButton.textContent = $runButton.textContent === 'start' ? 'pause' : 'start';
+    gameLoop.registerEvent({
+      type: 'RUN_BUTTON_CLICK',
+    });
   });
 
   (context.canvas as HTMLCanvasElement).addEventListener('click', (event) => {
@@ -55,40 +81,53 @@ onReady(async () => {
       ((event.pageY || event.clientY) - topOffset) * DEVICE_PIXEL_RATIO,
     ] as const;
 
-    let found = false;
-    gameState.world.forEach((row) => {
-      if (found) return;
-
-      row.forEach((cell) => {
-        if (found) return;
-
-        if (detectCollision({ cell, point })) {
-          found = true;
-          const { color, state } = toggleCell({ cell });
-          // @ts-ignore
-          cell.color = color;
-          // @ts-ignore
-          cell.state = state;
-        }
-      });
+    gameLoop.registerEvent({
+      type: 'BOARD_CLICK',
+      point,
     });
   });
 
   const tickInterval = Number($updateIntervalInput.value);
   $updateIntervalLabel.textContent = `${tickInterval} ms`;
 
-  const gameState = {
-    world,
-    running: false,
-    tick: {
-      interval: tickInterval,
-      delta: 0,
-    },
-  };
-
   const gameLoop = createGameLoop({
-    state: gameState,
+    state: {
+      world,
+      running: false,
+      tick: {
+        interval: tickInterval,
+        delta: 0,
+      },
+    },
+    eventBuffer: ([] as InputEvent[]),
     timeStep: 1000 / 60,
+    processInput: ({ state, events }) => {
+      return events.reduce((acc, event) => {
+        switch (event.type) {
+          case 'INTERVAL_SLIDER_UPDATE':
+            acc.tick.interval = Number(event.value);
+            return acc;
+
+          case 'RUN_BUTTON_CLICK':
+            acc.running = !acc.running;
+            return acc;
+
+          case 'BOARD_CLICK':
+            const result = detectWorldCollision({ world, point: event.point });
+            if (!result.collision) {
+              return acc;
+            }
+
+            const { position, cell } = result;
+            acc.world[position.row][position.column] = toggleCell({ cell });
+
+            return acc;
+
+          default:
+            throw new Error(`Unknown input type "${event}"`);
+        }
+      }, state);
+    },
     update: ({ state, delta }) => {
       state.tick.delta += Math.min(state.tick.interval, delta);
 
@@ -126,7 +165,6 @@ onReady(async () => {
   });
 
   gameLoop.start();
-
 });
 
 interface UpdateOptions<T> {
@@ -134,29 +172,41 @@ interface UpdateOptions<T> {
   readonly state: T;
 }
 
-interface DrawOptions<T> {
+interface RenderOptions<T> {
   readonly now: number;
   readonly state: T;
 }
 
-interface CreateGameLoopOptions<T> {
+interface ProcessInputOptions<T, E extends any[]> {
   readonly state: T;
-  readonly timeStep: number;
-  readonly render: (options: DrawOptions<T>) => T;
-  readonly update: (options: UpdateOptions<T>) => T;
+  readonly events: E;
 }
 
-const createGameLoop = <T>({
+interface CreateGameLoopOptions<T, E extends any[]> {
+  readonly state: T;
+  readonly eventBuffer: E;
+  readonly timeStep: number;
+  readonly render: (options: RenderOptions<T>) => T;
+  readonly update: (options: UpdateOptions<T>) => T;
+  readonly processInput: (options: ProcessInputOptions<T, E>) => T;
+}
+
+const createGameLoop = <T, E extends any[]>({
   state,
+  eventBuffer,
   timeStep,
   render,
   update,
-}: CreateGameLoopOptions<T>) => {
+  processInput,
+}: CreateGameLoopOptions<T, E>) => {
   let frameId = -1;
   let delta = 0;
 
   const loop = (last: number) => (now: number) => {
     delta = delta + Math.min(timeStep, now - last);
+
+    state = processInput({ state, events: eventBuffer });
+    eventBuffer.length = 0;
 
     while (delta >= timeStep) {
       delta = delta - timeStep;
@@ -173,5 +223,8 @@ const createGameLoop = <T>({
       frameId = requestAnimationFrame(loop(0));
     },
     stop: () => cancelAnimationFrame(frameId),
+    registerEvent: (event: UnwrapArray<E>) => eventBuffer.push(event),
   }
 };
+
+type UnwrapArray<T> = T extends Array<infer U> ? U : T;
