@@ -1,6 +1,6 @@
 import { $ } from './utils/dom';
 import { debounce } from './utils/debounce';
-import { ViewportSize } from './webgl/index';
+import { GridSize } from './world';
 
 export interface CreateControlPanelOptions {
   readonly selectors: {
@@ -62,13 +62,13 @@ export const createControlPanel = ({
         return cb(point);
       });
     },
-    onSizeUpdate: (cb: (size: ViewportSize) => void) => {
+    onSizeUpdate: (cb: (size: GridSize) => void) => {
       const handleBoardResize = debounce({
         wait: sizeUpdateDelay,
         action: () => {
-          const height = Number($heightInput.value);
-          const width = Number($widthInput.value);
-          return cb({ height, width });
+          const rows = Number($heightInput.value);
+          const columns = Number($widthInput.value);
+          return cb({ rows, columns });
         },
       });
 

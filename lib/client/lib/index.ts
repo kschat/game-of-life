@@ -13,6 +13,7 @@ import {
   detectWorldCollision,
   World,
   updateWorldSize,
+  GridSize,
 } from './world';
 
 import {
@@ -40,7 +41,7 @@ type InputEvent =
   }
   | {
     readonly type: 'SIZE_UPDATE';
-    readonly size: ViewportSize;
+    readonly size: GridSize;
   };
 
 interface GameState {
@@ -106,9 +107,11 @@ onReady(async () => {
       viewportSize,
       world: createWorld({
         viewportSize,
-        columns: 40,
-        rows: 20,
         border: BORDER,
+        gridSize: {
+          columns: 40,
+          rows: 20,
+        },
       }),
       running: false,
       tick: {
@@ -142,8 +145,8 @@ onReady(async () => {
             acc.world = updateWorldSize({
               world: acc.world,
               viewportSize: acc.viewportSize,
-              size: event.size,
               border: BORDER,
+              gridSize: event.size,
             });
             return acc;
 

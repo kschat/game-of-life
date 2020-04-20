@@ -3,6 +3,11 @@ import { ViewportSize, ProgramInfo } from './webgl/index';
 import { repeat } from './utils/repeat';
 import { COLOR } from './utils/colors';
 
+export interface GridSize {
+  rows: number;
+  columns: number;
+}
+
 export type World = Cell[][];
 
 export interface UpdateWorldOptions {
@@ -62,16 +67,17 @@ export const resizeWorld = ({
 
 export interface CreateWorldOptions {
   readonly viewportSize: ViewportSize;
-  readonly columns: number;
-  readonly rows: number;
+  readonly gridSize: GridSize;
   readonly border: number;
 }
 
 export const createWorld = ({
   viewportSize,
-  columns,
-  rows,
   border,
+  gridSize: {
+    columns,
+    rows,
+  },
 }: CreateWorldOptions): World => {
   const height = ((viewportSize.height - border) / rows) - border;
   const width = ((viewportSize.width - border) / columns) - border;
@@ -93,13 +99,19 @@ export const createWorld = ({
 export interface UpdateWorldSizeOptions {
   readonly viewportSize: ViewportSize;
   readonly world: World;
-  readonly size: ViewportSize;
+  readonly gridSize: GridSize;
   readonly border: number;
 }
 
-export const updateWorldSize = ({ world, size, viewportSize, border }: UpdateWorldSizeOptions): World => {
-  const rows = size.height;
-  const columns = size.width;
+export const updateWorldSize = ({
+  world,
+  viewportSize,
+  border,
+  gridSize: {
+    rows,
+    columns,
+  },
+}: UpdateWorldSizeOptions): World => {
   const height = ((viewportSize.height - border) / rows) - border;
   const width = ((viewportSize.width - border) / columns) - border;
 
