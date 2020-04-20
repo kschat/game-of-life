@@ -16,6 +16,4 @@ void main() {
 
   gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
   color = vertexColor;
-  // v_color = gl_Position * 0.5 + 0.5;
-  // v_color = vec4(1, 1, 1, 1);
 }
