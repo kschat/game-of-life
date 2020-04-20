@@ -3,6 +3,7 @@ import { onReady } from './utils/dom';
 import { toggleCell, Cell } from './cell';
 import { createControlPanel } from './control-panel';
 import { createGameLoop } from './game-loop';
+import { UnreachableCaseError } from './errors';
 
 import {
   updateWorld,
@@ -62,16 +63,6 @@ onReady(async () => {
     bufferNames: ['vertex', 'color'],
   });
 
-  const world = calculateWorld({
-    viewportSize: getViewportSize({
-      canvas: context.canvas as HTMLCanvasElement,
-      devicePixelRatio: DEVICE_PIXEL_RATIO,
-    }),
-    columns: 40,
-    rows: 20,
-    border: BORDER,
-  });
-
   controlPanel.onSliderUpdate((value) => gameLoop.registerInput({
     type: 'INTERVAL_SLIDER_UPDATE',
     value,
@@ -89,7 +80,15 @@ onReady(async () => {
   const gameLoop = createGameLoop<GameState, InputEvent>({
     timeStep: 1000 / 60,
     state: {
-      world,
+      world: calculateWorld({
+        viewportSize: getViewportSize({
+          canvas: context.canvas as HTMLCanvasElement,
+          devicePixelRatio: DEVICE_PIXEL_RATIO,
+        }),
+        columns: 40,
+        rows: 20,
+        border: BORDER,
+      }),
       running: false,
       tick: {
         interval: controlPanel.getTickInterval(),
@@ -109,7 +108,7 @@ onReady(async () => {
             return acc;
 
           case 'BOARD_CLICK':
-            const result = detectWorldCollision({ world, point: event.point });
+            const result = detectWorldCollision({ world: acc.world, point: event.point });
             if (!result.collision) {
               return acc;
             }
@@ -120,7 +119,7 @@ onReady(async () => {
             return acc;
 
           default:
-            throw new Error(`Unknown input type "${event}"`);
+            throw new UnreachableCaseError(event);
         }
       }, state);
     },

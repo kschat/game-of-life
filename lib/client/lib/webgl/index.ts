@@ -1,11 +1,5 @@
 import { repeat } from '../utils/repeat';
-
-export class WebGLError extends Error {
-  constructor(message: string | Error = '') {
-    super(typeof message !== 'string' ? message.message : message)
-    this.name = this.constructor.name;
-  }
-}
+import { WebGLError } from '../errors';
 
 export const loadContext = (selector: string): WebGLRenderingContext => {
   const canvas = document.querySelector<HTMLCanvasElement>(selector);
