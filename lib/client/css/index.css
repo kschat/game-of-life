@@ -1,0 +1,30 @@
+html {
+  box-sizing: border-box;
+  font-family: sans-serif;
+}
+
+html, body { 
+  width: 100%; 
+  height: 100%; 
+} 
+
+.content {
+  height: 94%;
+}
+
+.controls {
+  padding: 6px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.controls button, .controls input, .controls label {
+  margin: 4px;
+}
+
+.game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

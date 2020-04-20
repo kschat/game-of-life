@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "alwaysStrict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "strictNullChecks": true,
+    "declaration": false,
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "allowJs": false
+  },
+  "include": [
+    "lib"
+  ]
+}

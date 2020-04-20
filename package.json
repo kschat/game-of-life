@@ -1,0 +1,29 @@
+{
+  "name": "game-of-life",
+  "scripts": {
+    "build": "run-s build:ts copy-static",
+    "build:ts": "run-s build:ts:*",
+    "build:ts:server": "tsc -p ./tsconfig.server.json",
+    "build:ts:client": "tsc -p ./tsconfig.client.json",
+    "watch:ts": "run-p 'build:ts:* -- --watch'",
+    "watch:static": "chokidar 'lib/client/**/*.{html,css,glsl}' -c 'yarn run copy-static'",
+    "watch": "run-p watch:*",
+    "copy-static": "copyfiles -u 1 'lib/client/**/*.{html,css,glsl}' dist"
+  },
+  "dependencies": {
+    "@hapi/hapi": "18.3.2",
+    "@hapi/inert": "5.2.2",
+    "source-map-support": "0.5.13"
+  },
+  "devDependencies": {
+    "@types/hapi__boom": "9.0.1",
+    "@types/hapi__hapi": "18.2.5",
+    "@types/hapi__inert": "5.2.0",
+    "@types/node": "12.7.8",
+    "chokidar-cli": "2.0.0",
+    "copyfiles": "2.1.1",
+    "nodemon": "1.19.2",
+    "npm-run-all": "4.1.5",
+    "typescript": "3.8.3"
+  }
+}

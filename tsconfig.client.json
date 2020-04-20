@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "es2015",
+    "module": "amd",
+    "outDir": "dist",
+    "rootDir": "lib",
+    "lib": [
+      "es2015",
+      "DOM"
+    ]
+  },
+  "exclude": [
+    "lib/server"
+  ]
+}
