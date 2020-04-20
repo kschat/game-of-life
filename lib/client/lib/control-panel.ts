@@ -1,23 +1,20 @@
 import { $ } from './utils/dom';
 
 export interface CreateControlPanelOptions {
-  readonly runButtonSelector: string;
-  readonly updateIntervalInputSelector: string;
-  readonly updateIntervalLabelSelector: string;
-  readonly canvas: HTMLCanvasElement;
+  readonly selectors: {
+    readonly canvas: string;
+    readonly runButton: string;
+    readonly updateIntervalInput: string;
+    readonly updateIntervalLabel: string;
+  };
   readonly devicePixelRatio: number;
 }
 
-export const createControlPanel = ({
-  runButtonSelector,
-  updateIntervalInputSelector,
-  updateIntervalLabelSelector,
-  canvas,
-  devicePixelRatio,
-}: CreateControlPanelOptions) => {
-  const $runButton = $<HTMLInputElement>(runButtonSelector)[0];
-  const $updateIntervalInput = $<HTMLInputElement>(updateIntervalInputSelector)[0];
-  const $updateIntervalLabel = $<HTMLLabelElement>(updateIntervalLabelSelector)[0];
+export const createControlPanel = ({ selectors, devicePixelRatio }: CreateControlPanelOptions) => {
+  const $canvas = $<HTMLCanvasElement>(selectors.canvas)[0];
+  const $runButton = $<HTMLInputElement>(selectors.runButton)[0];
+  const $updateIntervalInput = $<HTMLInputElement>(selectors.updateIntervalInput)[0];
+  const $updateIntervalLabel = $<HTMLLabelElement>(selectors.updateIntervalLabel)[0];
 
   const tickInterval = Number($updateIntervalInput.value);
   $updateIntervalLabel.textContent = `${tickInterval} ms`;
@@ -43,9 +40,9 @@ export const createControlPanel = ({
       $runButton.addEventListener('click', () => cb());
     },
     onCanvasClick: (cb: (point: readonly [number, number]) => void) => {
-      canvas.addEventListener('click', (event) => {
-        const topOffset = canvas.offsetTop;
-        const leftOffset = canvas.offsetLeft;
+      $canvas.addEventListener('click', (event) => {
+        const topOffset = $canvas.offsetTop;
+        const leftOffset = $canvas.offsetLeft;
         const point = [
           ((event.pageX || event.clientX) - leftOffset) * devicePixelRatio,
           ((event.pageY || event.clientY) - topOffset) * devicePixelRatio,

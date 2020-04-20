@@ -46,21 +46,14 @@ interface GameState {
 }
 
 onReady(async () => {
-  const context = loadContext('#game-viewport');
-
   const controlPanel = createControlPanel({
-    runButtonSelector: '#run-button',
-    updateIntervalInputSelector: '#update-interval-input',
-    updateIntervalLabelSelector: '#update-interval-label',
-    canvas: context.canvas as HTMLCanvasElement,
+    selectors: {
+      runButton: '#run-button',
+      updateIntervalInput: '#update-interval-input',
+      updateIntervalLabel: '#update-interval-label',
+      canvas: '#game-viewport',
+    },
     devicePixelRatio: DEVICE_PIXEL_RATIO,
-  });
-
-  const programInfo = await createProgramInfo({
-    context,
-    vertexShaderPath: '/static/lib/shaders/board-vertex.glsl',
-    fragmentShaderPath: '/static/lib/shaders/board-fragment.glsl',
-    bufferNames: ['vertex', 'color'],
   });
 
   controlPanel.onSliderUpdate((value) => gameLoop.registerInput({
@@ -76,6 +69,15 @@ onReady(async () => {
     type: 'BOARD_CLICK',
     point,
   }));
+
+  const context = loadContext('#game-viewport');
+
+  const programInfo = await createProgramInfo({
+    context,
+    vertexShaderPath: '/static/lib/shaders/board-vertex.glsl',
+    fragmentShaderPath: '/static/lib/shaders/board-fragment.glsl',
+    bufferNames: ['vertex', 'color'],
+  });
 
   const gameLoop = createGameLoop<GameState, InputEvent>({
     timeStep: 1000 / 60,
