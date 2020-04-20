@@ -1,5 +1,5 @@
 import { COLOR } from './utils/colors';
-import { onReady, $ } from './utils/dom';
+import { onReady } from './utils/dom';
 import { toggleCell, Cell } from './cell';
 
 import {
@@ -16,6 +16,7 @@ import {
   resizeViewport,
   createProgramInfo,
 } from './webgl/index';
+import { createControlPanel } from './control-panel';
 
 const BORDER = 4;
 const DEVICE_PIXEL_RATIO = window.devicePixelRatio;
@@ -43,10 +44,15 @@ interface GameState {
 }
 
 onReady(async () => {
-  const $runButton = $('#run-button')[0];
-  const $updateIntervalInput = $<HTMLInputElement>('#update-interval-input')[0];
-  const $updateIntervalLabel = $('#update-interval-label')[0];
   const context = loadContext('#game-viewport');
+
+  const controlPanel = createControlPanel({
+    runButtonSelector: '#run-button',
+    updateIntervalInputSelector: '#update-interval-input',
+    updateIntervalLabelSelector: '#update-interval-label',
+    canvas: context.canvas as HTMLCanvasElement,
+    devicePixelRatio: DEVICE_PIXEL_RATIO,
+  });
 
   const programInfo = await createProgramInfo({
     context,
@@ -65,39 +71,19 @@ onReady(async () => {
     border: BORDER,
   });
 
-  $updateIntervalInput.addEventListener('input', ({ target }) => {
-    // @ts-ignore
-    const value = Number(target.value);
-    $updateIntervalLabel.textContent = `${value} ms`;
-    gameLoop.registerInput({
-      type: 'INTERVAL_SLIDER_UPDATE',
-      value,
-    });
-  });
+  controlPanel.onSliderUpdate((value) => gameLoop.registerInput({
+    type: 'INTERVAL_SLIDER_UPDATE',
+    value,
+  }));
 
-  $runButton.addEventListener('click', () => {
-    $runButton.textContent = $runButton.textContent === 'start' ? 'pause' : 'start';
-    gameLoop.registerInput({
-      type: 'RUN_BUTTON_CLICK',
-    });
-  });
+  controlPanel.onRunClick(() => gameLoop.registerInput({
+    type: 'RUN_BUTTON_CLICK',
+  }));
 
-  (context.canvas as HTMLCanvasElement).addEventListener('click', (event) => {
-    const topOffset = (context.canvas as HTMLCanvasElement).offsetTop;
-    const leftOffset = (context.canvas as HTMLCanvasElement).offsetLeft;
-    const point = [
-      ((event.pageX || event.clientX) - leftOffset) * DEVICE_PIXEL_RATIO,
-      ((event.pageY || event.clientY) - topOffset) * DEVICE_PIXEL_RATIO,
-    ] as const;
-
-    gameLoop.registerInput({
-      type: 'BOARD_CLICK',
-      point,
-    });
-  });
-
-  const tickInterval = Number($updateIntervalInput.value);
-  $updateIntervalLabel.textContent = `${tickInterval} ms`;
+  controlPanel.onCanvasClick((point) => gameLoop.registerInput({
+    type: 'BOARD_CLICK',
+    point,
+  }));
 
   const gameLoop = createGameLoop<GameState, InputEvent>({
     timeStep: 1000 / 60,
@@ -105,7 +91,7 @@ onReady(async () => {
       world,
       running: false,
       tick: {
-        interval: tickInterval,
+        interval: controlPanel.getTickInterval(),
         delta: 0,
       },
     },
