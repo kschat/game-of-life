@@ -1,6 +1,6 @@
 import { COLOR } from './utils/colors';
 import { onReady } from './utils/dom';
-import { toggleCell, Cell } from './cell';
+import { toggleCell } from './cell';
 import { createControlPanel } from './control-panel';
 import { createGameLoop } from './game-loop';
 import { UnreachableCaseError } from './errors';
@@ -8,9 +8,11 @@ import { UnreachableCaseError } from './errors';
 import {
   updateWorld,
   resizeWorld,
-  calculateWorld,
+  createWorld,
   drawWorld,
   detectWorldCollision,
+  World,
+  updateWorldSize,
 } from './world';
 
 import {
@@ -18,6 +20,7 @@ import {
   getViewportSize,
   resizeViewport,
   createProgramInfo,
+  ViewportSize,
 } from './webgl/index';
 
 const BORDER = 4;
@@ -34,10 +37,15 @@ type InputEvent =
   | {
     readonly type: 'BOARD_CLICK';
     readonly point: readonly [number, number];
+  }
+  | {
+    readonly type: 'SIZE_UPDATE';
+    readonly size: ViewportSize;
   };
 
 interface GameState {
-  world: Cell[][];
+  world: World;
+  viewportSize: ViewportSize;
   running: boolean;
   tick: {
     interval: number;
@@ -48,12 +56,15 @@ interface GameState {
 onReady(async () => {
   const controlPanel = createControlPanel({
     selectors: {
+      canvas: '#game-viewport',
       runButton: '#run-button',
       updateIntervalInput: '#update-interval-input',
       updateIntervalLabel: '#update-interval-label',
-      canvas: '#game-viewport',
+      heightInput: '#height-input',
+      widthInput: '#width-input',
     },
     devicePixelRatio: DEVICE_PIXEL_RATIO,
+    sizeUpdateDelay: 500,
   });
 
   controlPanel.onSliderUpdate((value) => gameLoop.registerInput({
@@ -70,6 +81,11 @@ onReady(async () => {
     point,
   }));
 
+  controlPanel.onSizeUpdate((size) => gameLoop.registerInput({
+    type: 'SIZE_UPDATE',
+    size,
+  }));
+
   const context = loadContext('#game-viewport');
 
   const programInfo = await createProgramInfo({
@@ -79,14 +95,17 @@ onReady(async () => {
     bufferNames: ['vertex', 'color'],
   });
 
+  const viewportSize = getViewportSize({
+    canvas: context.canvas as HTMLCanvasElement,
+    devicePixelRatio: DEVICE_PIXEL_RATIO,
+  });
+
   const gameLoop = createGameLoop<GameState, InputEvent>({
     timeStep: 1000 / 60,
     state: {
-      world: calculateWorld({
-        viewportSize: getViewportSize({
-          canvas: context.canvas as HTMLCanvasElement,
-          devicePixelRatio: DEVICE_PIXEL_RATIO,
-        }),
+      viewportSize,
+      world: createWorld({
+        viewportSize,
         columns: 40,
         rows: 20,
         border: BORDER,
@@ -117,7 +136,15 @@ onReady(async () => {
 
             const { position, cell } = result;
             acc.world[position.row][position.column] = toggleCell({ cell });
+            return acc;
 
+          case 'SIZE_UPDATE':
+            acc.world = updateWorldSize({
+              world: acc.world,
+              viewportSize: acc.viewportSize,
+              size: event.size,
+              border: BORDER,
+            });
             return acc;
 
           default:
@@ -146,6 +173,7 @@ onReady(async () => {
       });
 
       if (viewportSize.resize) {
+        state.viewportSize = viewportSize;
         state.world = resizeWorld({
           viewportSize,
           world: state.world,
