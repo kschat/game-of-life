@@ -226,8 +226,6 @@ interface CreateUniformSetterOptions {
   readonly info: WebGLActiveInfo;
 }
 
-// type UniformSetter = ReturnType<typeof createUniformSetter>;
-// Float32List | number | Int32List
 type UniformSetter = (value: any) => void;
 
 const createUniformSetter = ({
@@ -241,7 +239,6 @@ const createUniformSetter = ({
     throw new WebGLError(`Uniform "${name}" does not exist`);
   }
 
-  // const a = context.uniform2fv.bind(location, context);
   const isArray = size > 1 && name.slice(-3) === '[0]';
 
   switch (type) {
@@ -313,7 +310,7 @@ export interface ResizeViewportOptions {
   readonly devicePixelRatio? : number;
 }
 
-export interface ViewportResize extends ViewportSize{
+export interface ViewportResize extends ViewportSize {
   readonly resize: boolean;
 }
 
